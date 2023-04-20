@@ -1,4 +1,5 @@
-﻿using API.Exceptions;
+﻿using API.ApiResponses;
+using API.Exceptions;
 using Domain.Aggregates.CustomerAggregate;
 using Domain.Aggregates.FlightAggregate;
 using Domain.Aggregates.OrderAggregate;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace API.Application.Commands.ConfirmOrder
 {
-    public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand>
+    public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, OrderConfirmationResponse>
     {
         private readonly IOrderRepository _orderRepository;
         private readonly ILogger<ConfirmOrderCommandHandler> _logger;
@@ -21,14 +22,20 @@ namespace API.Application.Commands.ConfirmOrder
             _logger = logger;
         }
 
-        public async Task<Unit> Handle(ConfirmOrderCommand request, CancellationToken cancellationToken)
+        /// <summary>
+        /// Handles the confirmation of an order.
+        /// </summary>
+        /// <param name="request">The request containing the order ID to be confirmed.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>An OrderConfirmationResponse containing the confirmed order information.</returns>
+        public async Task<OrderConfirmationResponse> Handle(ConfirmOrderCommand request, CancellationToken cancellationToken)
         {
             try
             {
-                // Get the order before doing anything to check the eligibility
+                // Get the order before confirmation to check if it is eligible for confirmation
                 var orderBeforeConfirm = await _orderRepository.GetAsync(request.OrderId);
 
-                // Check for null results
+                // Check if the order is null or not available for confirmation
                 if (orderBeforeConfirm == null)
                 {
                     var message = "Order is not available to proceed.";
@@ -36,7 +43,7 @@ namespace API.Application.Commands.ConfirmOrder
                     throw new OrderApiException(message);
                 }
 
-                // Check for orders with higher quantities than available
+                // Check if the quantity of the order is eligible for confirmation
                 if (!orderBeforeConfirm.isQuantityEligibleToConfirm())
                 {
                     var message = "Available quantity is not enough.";
@@ -44,23 +51,25 @@ namespace API.Application.Commands.ConfirmOrder
                     throw new OrderApiException(message);
                 }
 
-                // Change the order status to Confirmed
+                // Confirm the order by changing its status
                 var order = await _orderRepository.ConfirmAsync(request.OrderId);
 
-                // Change the availability
+                // Update the availability of the order
                 orderBeforeConfirm.FlightRate.MutateAvailability(-order.Quantity);
 
                 // Push everything to the database
                 await _orderRepository.UnitOfWork.SaveChangesAsync();
 
-                // Send the notification to the customer
+                /// Send a notification to the customer about the confirmation of their order
                 orderBeforeConfirm.Customer.SendNotification($"Your order has been confirmed. Order No: {order.ReferenceNo}");
 
-                return new Unit();
+                // Return the order confirmation response
+                return new OrderConfirmationResponse(orderBeforeConfirm.Id, orderBeforeConfirm.ReferenceNo, orderBeforeConfirm.Quantity);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("Unexpected Exception", ex);
+                // Log and rethrow any unexpected exception
+                _logger.LogCritical("An unexpected exception occurred while confirming the order.", ex);
                 throw;
             }
         }

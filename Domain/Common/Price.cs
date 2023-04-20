@@ -19,6 +19,27 @@ namespace Domain.Common
             Currency = currency;
         }
 
+        public string GetCurrencyCode()
+        {
+            string currencyCode = "EUR";
+
+            // TODO: Write a proper way to fetch currency code via an API to get standerd currency code.
+
+            switch (Currency)
+            {
+                case Currency.USD:
+                    currencyCode = "EUR";
+                    break;
+                case Currency.AUD:
+                    currencyCode = "EUR";
+                    break;
+                default:
+                    break;
+            }
+
+            return currencyCode;
+        }
+
         protected override IEnumerable<object> GetEqualityComponents()
         {
             yield return Value;

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Aggregates.CustomerAggregate;
 using Domain.Aggregates.FlightAggregate;
+using Domain.Common;
 using Domain.Exceptions;
 using Domain.SeedWork;
 
@@ -14,7 +15,6 @@ namespace Domain.Aggregates.OrderAggregate
     {
         public string ReferenceNo { get; private set; }
         public int Quantity { get; private set; }
-
         public Guid CustomerId { get; private set; }
         public Customer Customer { get; private set;}
 
@@ -72,6 +72,11 @@ namespace Domain.Aggregates.OrderAggregate
         public bool isQuantityEligibleToConfirm()
         {
             return FlightRate.Available >= Quantity;
+        }
+
+        public void SetFlightRate(FlightRate flightRate)
+        {
+            FlightRate = flightRate;
         }
 
         private bool IsOrderEligibleToChange()

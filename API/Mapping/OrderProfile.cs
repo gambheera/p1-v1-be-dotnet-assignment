@@ -8,7 +8,9 @@ namespace API.Mapping
     {
         public OrderProfile()
         {
-            CreateMap<Order, OrderViewModel>();
+            CreateMap<Order, OrderViewModel>()
+                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.FlightRate.Price.Value))
+                .ForMember(dest => dest.CurrencyCode, opt => opt.MapFrom(src => src.FlightRate.Price.GetCurrencyCode()));
         }
     }
 }

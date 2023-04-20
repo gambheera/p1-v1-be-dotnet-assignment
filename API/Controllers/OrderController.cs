@@ -35,11 +35,11 @@ namespace API.Controllers
         {
             var order = await _mediator.Send(command);
 
-            return Ok(_mapper.Map<OrderViewModel>(order));
+            return StatusCode(201, _mapper.Map<OrderViewModel>(order));
         }
 
         [HttpPut]
-        [Route("Confirm/{orderId}")]
+        [Route("{orderId}/Confirm")]
         public async Task<IActionResult> Confirm(Guid orderId)
         {
             var command = new ConfirmOrderCommand(orderId);
@@ -50,9 +50,9 @@ namespace API.Controllers
                 return BadRequest();
             }
 
-            await _mediator.Send(command);
+            var confirmOrderResponse = await _mediator.Send(command);
 
-            return Ok();
+            return Ok(confirmOrderResponse);
         }
     }
 }

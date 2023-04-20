@@ -30,7 +30,7 @@ public class FlightsController : ControllerBase
     }
 
     [HttpGet]
-    [Route("Search/{destinationAirportName}")]
+    [Route("{destinationAirportName}")]
     public async Task<ActionResult<IEnumerable<FlightResponse>>> GetAvailableFlights(string destinationAirportName)
     {
         var query = new GetAvailableFlightsQuery(destinationAirportName);
